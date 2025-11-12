@@ -1,0 +1,124 @@
+version: '3.8'
+services:
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    ports:
+      - "10051:10051"
+    environment:
+      - DB_SERVER_HOST=zabbix-mysql
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=zabbix_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - zabbix_export:/var/lib/zabbix/export
+      - zabbix_snmptraps:/var/lib/zabbix/snmptraps
+      - zabbix_enc:/var/lib/zabbix/enc
+    networks:
+      - zabbix-net
+    depends_on:
+      - zabbix-mysql
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-mysql:latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    ports:
+      - "80:8080"
+      - "443:8443"
+    environment:
+      - DB_SERVER_HOST=zabbix-mysql
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=zabbix_password
+      - MYSQL_ROOT_PASSWORD=root_password
+      - ZBX_SERVER_HOST=zabbix-server
+      - PHP_TZ=Europe/Tallinn
+      - ZBX_SERVER_NAME=Zabbix Server
+    volumes:
+      - zabbix_web:/usr/share/zabbix
+    networks:
+      - zabbix-net
+    depends_on:
+      - zabbix-mysql
+      - zabbix-server
+
+  zabbix-mysql:
+    image: mysql:8.0
+    container_name: zabbix-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-buffer-pool-size=2G
+    environment:
+      - MYSQL_DATABASE=zabbix
+      - MYSQL_USER=zabbix
+      - MYSQL_PASSWORD=zabbix_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - zabbix_mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - zabbix-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 10s
+      retries: 10
+
+  zabbix-agent:
+    image: zabbix/zabbix-agent:latest
+    container_name: zabbix-agent
+    restart: unless-stopped
+    ports:
+      - "10050:10050"
+    environment:
+      - ZBX_HOSTNAME=zabbix-server
+      - ZBX_SERVER_HOST=zabbix-server
+    privileged: true
+    pid: "host"
+    networks:
+      - zabbix-net
+    depends_on:
+      - zabbix-server
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /proc:/proc:ro
+
+  zabbix-java-gateway:
+    image: zabbix/zabbix-java-gateway:latest
+    container_name: zabbix-java-gateway
+    restart: unless-stopped
+    environment:
+      - ZBX_START_POLLERS=5
+    networks:
+      - zabbix-net
+    depends_on:
+      - zabbix-server
+
+volumes:
+  zabbix_mysql_data:
+    driver: local
+  zabbix_web:
+    driver: local
+  zabbix_export:
+    driver: local
+  zabbix_snmptraps:
+    driver: local
+  zabbix_enc:
+    driver: local
+
+networks:
+  zabbix-net:
+    driver: bridge
