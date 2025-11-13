@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints
+.venv/
+venv/
+env/
+ENV/
+
+# Virtual environments
+.venv/
+venv/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Prometheus data
+**/prometheus/data/
+**/prometheus/storage/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary
+*.tmp
+*.temp
+*.bak
+*~
