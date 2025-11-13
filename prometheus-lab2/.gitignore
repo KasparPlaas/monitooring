@@ -9,17 +9,9 @@ venv/
 env/
 ENV/
 
-# Virtual environments
-.venv/
-venv/
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
 # Prometheus data
-**/prometheus/data/
-**/prometheus/storage/
+prometheus/data/
+prometheus/storage/
 
 # Logs
 *.log
@@ -27,14 +19,13 @@ logs/
 
 # Environment files
 .env
-.env.*
+.env.local
 
 # IDE / Editor
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 Thumbs.db
@@ -42,6 +33,4 @@ Thumbs.db
 
 # Temporary
 *.tmp
-*.temp
 *.bak
-*~
